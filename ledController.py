@@ -2,12 +2,26 @@ import machine
 import array
 import rp2
 
+
 class LED:
   def __init__(self, R: int, G: int, B: int, brightness: float):
     self.R = R
     self.G = G
     self.B = B
     self.brightness = brightness
+
+
+class FrameContext:
+  def __init__(self, ledController: "Controller"):
+    self.ledController = ledController
+
+  def __enter__(self):
+    self.ledController.setFlush(False)
+    return self
+
+  def __exit__(self, exc_type, exc_value, traceback):
+    self.ledController.setFlush(True)
+    return self
 
 
 class Controller:
@@ -23,7 +37,7 @@ class Controller:
   single = None
 
   @staticmethod
-  def getInstance(GPIOPin: machine.Pin = machine.Pin(22), ledCount: int = 64, brightness=0.1) -> "Controller":
+  def getInstance(GPIOPin: machine.Pin = machine.Pin(21), ledCount: int = 64, brightness=0.1) -> "Controller":
     if Controller.single is None:
       Controller.single = Controller(
           GPIOPin=GPIOPin, ledCount=ledCount,
@@ -104,6 +118,9 @@ class Controller:
           + led.B * led.brightness
       )
     self.__sm.put(self.__leds, 8)
+
+  def frame(self):
+    return FrameContext(self)
 
 
 con = Controller.getInstance()
